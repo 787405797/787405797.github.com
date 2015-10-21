@@ -1,0 +1,275 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>cuda-convnet自定义初始化权重 | Xuzhenqi&#39;s blog</title>
+  <meta name="author" content="Xu Zhenqi">
+  
+  <meta name="description" content="Technology changes life.">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="cuda-convnet自定义初始化权重"/>
+  <meta property="og:site_name" content="Xuzhenqi&#39;s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  
+  
+    <link href="/favicon.png" rel="icon">
+  
+  
+  <link rel="stylesheet" href="/css/bootstrap.min.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="/css/font-awesome.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="/css/responsive.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="/css/highlight.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="/css/google-fonts.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+
+  <script src="/js/jquery-2.0.3.min.js"></script>
+
+  <!-- analytics -->
+  
+
+
+
+</head>
+
+ <body>  
+  <nav id="main-nav" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+      <button type="button" class="navbar-header navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+		<span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+	  <a class="navbar-brand" href="/">Xuzhenqi&#39;s blog</a>
+      <div class="collapse navbar-collapse nav-menu">
+		<ul class="nav navbar-nav">
+		  
+		  <li>
+			<a href="/archives" title="All the articles.">
+			  <i class="fa fa-archive"></i>Archives
+			</a>
+		  </li>
+		  
+		  <li>
+			<a href="/categories" title="All the categories.">
+			  <i class="fa fa-folder"></i>Categories
+			</a>
+		  </li>
+		  
+		  <li>
+			<a href="/tags" title="All the tags.">
+			  <i class="fa fa-tags"></i>Tags
+			</a>
+		  </li>
+		  
+		  <li>
+			<a href="/about" title="About me.">
+			  <i class="fa fa-user"></i>About
+			</a>
+		  </li>
+		  
+		</ul>
+      </div>
+    </div> <!-- container -->
+</nav>
+<div class="clearfix"></div>
+
+  <div class="container">
+  	<div class="content">
+    	 
+
+
+	
+		<div class="page-header">		
+			<h1> cuda-convnet自定义初始化权重</h1>
+		</div>		
+	
+
+
+
+<div class="row post">
+	<!-- cols -->
+	
+	<div id="top_meta"></div>
+	<div class="col-md-9">
+	
+
+	<!-- content -->
+	<div class="mypage">		
+	  		
+
+	  <p>最近在用<em>cuda-convnet</em>做笑脸检测，默认的权重初始化是正态分布。结果训练出来的滤波器不是很好看，于是想要用其它方式的初始化。查看<a href="https://code.google.com/p/cuda-convnet/wiki/LayerParams" target="_blank" rel="external">wiki</a>居然找到了<em>initWFunc</em>这样的配置参数。具体的使用方法在wiki里已经说得很清楚了。这里详细分析其源代码。</p>
+<p>我们从函数的入口处开始:<br><figure class="highlight python"><figcaption><span>[convnet.py] []</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    ...</span><br><span class="line">    model = ConvNet(op, load_dic)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure><br><a id="more"></a></p>
+<p>以上代码前面省略的部分是对输入参数进行解析。这一句则是实例化一个<em>ConvNet</em>对象。可以想到对参数的初始化就在这个函数中:<br><figure class="highlight python"><figcaption><span>[convnet.py] []</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ConvNet</span><span class="params">(IGPUModel)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, op, load_dic, dp_params=&#123;&#125;)</span>:</span></span><br><span class="line">        ...</span><br><span class="line">        IGPUModel.__init__(self,<span class="string">"ConvNet"</span>,op,load_dic, ... )</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure><br>可以看到ConvNet继承了IGPUModel,因此，我们还需要继续往下找。<br><figure class="highlight python"><figcaption><span>[gpumodel.py] []</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">IGPUModel</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(...)</span>:</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.init_model_state()</span><br><span class="line">        <span class="keyword">except</span> ...</span><br><span class="line">        ...</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">init_model_state</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure><br>注意IGPUModel.init_model_state()什么事情也没有做.而self其实是一个ConvNet对象,因此这里调用的是ConvNet.init_model_state():<br><figure class="highlight python"><figcaption><span>[convnet.py] []</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ConvNet</span><span class="params">(IGPUModel)</span>:</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">init_model_state</span><span class="params">(self)</span>:</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">if</span> self.load_file:</span><br><span class="line">            ms[<span class="string">'layers'</span>] = lay.LayerParser.parser_layers(self.layer_def, self.layer_params, self, ms[<span class="string">'layers'</span>]);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            ms[<span class="string">'layers'</span>] = lay.LayerParser.parser_layers(self.layer_def, self.layer_params, self);</span><br><span class="line">        ...</span><br></pre></td></tr></table></figure><br>这段代码的意思是如果存在self.load_file,那么就调用lay.LayerParser.parser_layers()将ms[‘layers’]传入并返回修改后的ms[‘layers’].如果不存在，就直接处理layer_def和layer_params,并返回ms[‘layers’].因为lay.LayerParser.parser_layers以两个配置文件参数,所以有必要对它进行仔细地分析:<br><figure class="highlight python"><figcaption><span>[layer.py] []</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LayerParser</span>:</span></span><br><span class="line">    ...</span><br><span class="line"><span class="decorator">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">parser_layers</span><span class="params">(layer_cfg_path, param_cfg_path, model, layers=[])</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            ... <span class="comment">#安全检查</span></span><br><span class="line">            <span class="keyword">if</span> len(layers) == <span class="number">0</span></span><br><span class="line">                <span class="comment">#使用MyConfigParser解析配置文件</span></span><br><span class="line">                mcp = MyConfigParser(dict_type=OrderedDict)</span><br><span class="line">                mcp.read([layer_cfg_path])</span><br><span class="line">                <span class="keyword">for</span> name <span class="keyword">in</span> mcp.sections():</span><br><span class="line">                    ... <span class="comment">#安全检查</span></span><br><span class="line">                    <span class="comment">#获得类型</span></span><br><span class="line">                    ltype = mcp.safe_get(name,<span class="string">'type'</span>)</span><br><span class="line">                    ... <span class="comment">#安全检查</span></span><br><span class="line">                    <span class="comment">#使用各层类型对应的类去解析</span></span><br><span class="line">                    layers += [layer_parsers[ltype]]().parse(name,mcp,layers)]</span><br><span class="line"></span><br><span class="line">            ... <span class="comment">#对特殊的层比如有神经元的层和定义了cost的层进行处理</span></span><br><span class="line">            ... <span class="comment">#处理param_cfg</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> layers</span><br><span class="line">...</span><br><span class="line">layer_parsers = &#123;<span class="string">'data'</span>: <span class="keyword">lambda</span> : DataLayerParser(),</span><br><span class="line">                 <span class="string">'fc'</span>: <span class="keyword">lambda</span> : FCLayerParser(),</span><br><span class="line">                 <span class="string">'conv'</span>: <span class="keyword">lambda</span>: ConvLayerParser(),</span><br><span class="line">                 ...<span class="comment">#其它类型及其解析类&#125;</span></span><br></pre></td></tr></table></figure><br>这段代码是处理layer_cfg和param_cfg的核心.它首先使用MyConfigParser类去读取配置文件,然后得到配置文件中每层的type.layer_parsers是一个全局的dict.保存着各类型对应的解析类.对各层调用其对应的解析类.这段代码的其余部分进行类似的特殊处理,然后处理param_cfg文件.寻寻觅觅了这么久,我们已经很接近答案了.这里以conv类型为例继续寻找答案.从上面可以看出,conv层的解析类为ConvLayerParser:<br><figure class="highlight python"><figcaption><span>[layer.py] []</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ConvLayerParser</span><span class="params">(LocalLayerParser)</span>:</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">parse</span><span class="params">(self,name,mcp,prev_layers)</span>:</span></span><br><span class="line">        dic = LocalLayerParser.parse(self,name,mcp,prev_layers)</span><br><span class="line">        ... <span class="comment">#属性赋值</span></span><br><span class="line">        <span class="comment">#权重初始化,这一句极其重要</span></span><br><span class="line">        self.make_weights(dic[<span class="string">'initW'</span>],...)</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> dic</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LocalLayerParser</span><span class="params">(WeightLayerParser)</span>:</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">parse</span><span class="params">(self,name,mcp,prev_layers)</span>:</span></span><br><span class="line">        <span class="comment">#继续往前找</span></span><br><span class="line">        dic = WeightLayerParser.parse(self,name,mcp,prev_layers)</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WeightLayerParser</span><span class="params">(LayerWithInputParser)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">parse</span><span class="params">(self,name,mcp,prev_layers)</span>:</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">#终于找到了,找的好辛苦啊</span></span><br><span class="line">        dic[<span class="string">'initWFunc'</span>] = mcp.safe_get(name,<span class="string">'initWFunc'</span>,default=<span class="string">""</span>)</span><br><span class="line">        ...</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">make_weights</span><span class="params">(self,initW,rows,cols,order=<span class="string">'C'</span>)</span>:</span></span><br><span class="line">        dic = self.dic</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">if</span> dic[<span class="string">'initWFunc'</span>]:</span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> xrange(len(dic[<span class="string">'inputs'</span>])):</span><br><span class="line">                dic[<span class="string">'weights'</span>] += [self.call_init_func(<span class="string">'initWFunc'</span>,(rows[i] cols[i]),input_idx=i)]</span><br><span class="line">                ...</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call_init_func</span><span class="params">(self,param_name,shapes,input_idx=-<span class="number">1</span>)</span>:</span></span><br><span class="line">        dic = self.dic</span><br><span class="line">        <span class="comment">#对输入的initWFunc值进行正则匹配,得到函数名及参数</span></span><br><span class="line">        func_pat = re.compile(<span class="string">'...'</span>)</span><br><span class="line">        m = func_pat.match(dic[param_name])</span><br><span class="line">        ...<span class="comment">#安全检查</span></span><br><span class="line">        module, func = m.group(<span class="number">1</span>), m.group(<span class="number">2</span>) <span class="comment">#得到模块和函数</span></span><br><span class="line">        params = ... <span class="comment">#得到参数</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            mod = __import__(module) <span class="comment">#导入模块</span></span><br><span class="line">            <span class="keyword">return</span> getattr(mod,func)(dic[<span class="string">'name'</span>],input_idx,shapes,params)... <span class="comment">#调用自定义函数初始化权重.</span></span><br><span class="line">        ...</span><br></pre></td></tr></table></figure><br>ConvLayerParser.parse解析该层的参数,并最终得到dic[‘initWfunc’].然后调用make_weights函数进行初始化,make_weights函数调用call_init_func函数完成最终的工作:导入模块并调用自定义函数.</p>
+	  
+	</div>
+
+	<div>
+  	<center>
+	<div class="pagination">
+<ul class="pagination">
+	 
+				
+    	<li class="prev"><a href="/2014/06/05/c++map陷阱/" class="alignleft prev"><i class="fa fa-arrow-circle-o-left"></i>Prev</a></li>
+  		
+
+        <li><a href="/archives"><i class="fa fa-archive"></i>Archive</a></li>
+
+		
+          <li class="next disabled"><a>Next<i class="fa fa-arrow-circle-o-right"></i></a></li>
+        
+	
+</ul>
+</div>
+
+    </center>
+	</div>
+	
+    <!-- share -->
+    <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style_32x32">
+<a class="jiathis_button_qzone"></a>
+<a class="jiathis_button_tsina"></a>
+<a class="jiathis_button_tqq"></a>
+<a class="jiathis_button_weixin"></a>
+<a class="jiathis_button_renren"></a>
+<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+<a class="jiathis_counter_style"></a>
+<br></br>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1394570368069641" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+
+    <!-- recommend -->
+    <!-- an Button BEGIN -->
+<div class="ujian-hook"></div>
+<script type="text/javascript">var ujian_config = {num:12,picSize:84,textHeight:45};</script>
+<script type="text/javascript" src="http://v1.ujian.cc/code/ujian.js?uid=1925294"></script>
+<a href="http://www.ujian.cc" style="border:0;"><img src="http://img.ujian.cc/pixel.png" alt="友荐云推荐" style="border:0;padding:0;margin:0;" /></a>
+<!-- UJian Button END -->
+
+
+	<!-- comment -->
+	
+<section id="comment">
+  <h2 class="title">Comments</h2>
+
+  
+  	 <div id="disqus_thread">
+     <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  	 </div>
+  
+</section>
+
+	</div> <!-- col-md-9/col-md-12 -->
+		
+	
+	<div id="side_meta">
+		<div class="col-md-3" id="post_meta"> 
+
+	<!-- date -->
+	
+	<div class="meta-widget">
+	<i class="fa fa-clock-o"></i>
+	Apr 29 2014 
+	</div>
+	
+
+	<!-- categories -->
+    
+	<div class="meta-widget">
+	<a data-toggle="collapse" data-target="#categorys"><i class="fa fa-folder"></i></a>	
+    <ul id="categorys" class="tag_box list-unstyled collapse in">
+          
+  <li>
+    <li><a href="/categories/cnn/">cnn<span>1</span></a></li>
+  </li>
+
+    </ul>
+	</div>
+	
+
+	<!-- tags -->
+	
+	<div class="meta-widget">
+	<a data-toggle="collapse" data-target="#tags"><i class="fa fa-tags"></i></a>		  
+    <ul id="tags" class="tag_box list-unstyled collapse in">	  
+	    
+  <li><a href="/tags/cnn/">cnn<span>1</span></a></li> <li><a href="/tags/convnet/">convnet<span>1</span></a></li> <li><a href="/tags/cuda/">cuda<span>1</span></a></li>
+    </ul>
+	</div>
+		
+
+	<!-- toc -->
+	<div class="meta-widget">
+	
+	</div>
+	
+    <hr>
+	
+</div><!-- col-md-3 -->
+
+	</div>
+		
+
+</div><!-- row -->
+
+<script type="text/javascript">
+var disqus_shortname = 'xuzhenqi';
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+	</div>
+  </div>
+  <div class="container-narrow">
+  <footer> <p>
+  &copy; 2015 Xu Zhenqi
+  
+      with help from <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="http://getbootstrap.com/" target="_blank">Twitter Bootstrap</a>. Theme by <a href="http://github.com/wzpan/hexo-theme-freemind/">Freemind</a>.    
+</p> </footer>
+</div> <!-- container-narrow -->
+  
+
+
+  
+<a id="gotop" href="#">   
+  <span>▲</span> 
+</a>
+
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+<script src="/js/search.js"></script> 
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+
+</body>
+   </html>
