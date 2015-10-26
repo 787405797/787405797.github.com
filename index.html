@@ -108,6 +108,31 @@
 	
 	<!-- display as entry -->	
 		<h3 class="title">
+			<div class="date"> Oct 26 2015 </div>
+			<div class="article-title"><a href="/2015/10/26/Matlab与Windows桌面提醒/" >Matlab与Windows桌面提醒</a></div>						
+		</h3>
+	
+
+
+			<div class="entry">
+  <div class="row">
+	
+	
+		<p>最近在实验室用Matlab做实验，一次训练下来最少得也得5到10分钟吧。在Matlab运行的过程中，又不太好去做别的事情，因为5到10分钟的时间实在有点短。但是，眼睁睁看着代码的运行的话，5分钟又实在太长了。因此，我就想能不能再Matlab中调用Windows的系统命令来实现桌面提醒？</p>
+<p>在网上搜寻了一番，找到了这样一个软件Notify。它能够实现在命令行下实现桌面提醒。再利用Matlab的函数system()。就顺利完成任务啦！</p>
+<p>以下是我的使用方法：</p>
+<p>首先是下载Notify，将它解压到某个文件夹，这里的话就写作<notify_directory>；<br>然后将<notify_directory>加入系统路径；<br>在Matlab中需要用到的时候，只需要加入这句命令即可。<br>system(‘notify Title Cotent Time’)<br>另外，在网上找到了linux版本的桌面唤醒，效果比Windows下的好多了。</notify_directory></notify_directory></p>
+
+	
+	</div>
+  <a type="button" href="/2015/10/26/Matlab与Windows桌面提醒/#more" class="btn btn-default more">Read More</a>
+</div>
+
+		
+			
+	
+	<!-- display as entry -->	
+		<h3 class="title">
 			<div class="date"> Dec 28 2014 </div>
 			<div class="article-title"><a href="/2014/12/28/protobuf小结/" >protopuf小结</a></div>						
 		</h3>
@@ -235,6 +260,8 @@
 		
 			<li><a href="/categories/cnn/">cnn<span>1</span></a></li>
 		
+			<li><a href="/categories/tools/">tools<span>1</span></a></li>
+		
 		</ul>
 	</div>
 
@@ -244,13 +271,13 @@
 		<h4>Tag Cloud</h4>
 		<ul class="tag_box inline list-unstyled">		
 		
-			<li><a href="/tags/reaver/">reaver<span>1</span></a></li>
+			<li><a href="/tags/Matlab/">Matlab<span>1</span></a></li>
 		
 			<li><a href="/tags/cuda/">cuda<span>1</span></a></li>
 		
-			<li><a href="/tags/convnet/">convnet<span>1</span></a></li>
+			<li><a href="/tags/wifi破解/">wifi破解<span>1</span></a></li>
 		
-			<li><a href="/tags/wpa2-PSK/">wpa2/PSK<span>1</span></a></li>
+			<li><a href="/tags/convnet/">convnet<span>1</span></a></li>
 		
 			<li><a href="/tags/cnn/">cnn<span>1</span></a></li>
 		
@@ -258,7 +285,11 @@
 		
 			<li><a href="/tags/Map/">Map<span>1</span></a></li>
 		
-			<li><a href="/tags/wifi破解/">wifi破解<span>1</span></a></li>
+			<li><a href="/tags/Windows/">Windows<span>1</span></a></li>
+		
+			<li><a href="/tags/wpa2-PSK/">wpa2/PSK<span>1</span></a></li>
+		
+			<li><a href="/tags/reaver/">reaver<span>1</span></a></li>
 		
 		 
 		</ul>
@@ -270,6 +301,10 @@
 <div class="widget">
   <h4>Recent Posts</h4>
   <ul class="entry list-unstyled">
+    
+      <li>
+        <a href="/2015/10/26/Matlab与Windows桌面提醒/" ><i class="fa fa-file-o"></i>Matlab与Windows桌面提醒...</a>
+      </li>
     
       <li>
         <a href="/2014/12/28/protobuf小结/" ><i class="fa fa-file-o"></i>protopuf小结...</a>
