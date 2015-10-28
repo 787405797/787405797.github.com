@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>ubuntu和windows双系统的方法 | Xuzhenqi&#39;s blog</title>
+  <title>将string中保存的字符以ASCII码的形式打印 | Xuzhenqi&#39;s blog</title>
   <meta name="author" content="Xu Zhenqi">
   
   <meta name="description" content="Technology changes life.">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="ubuntu和windows双系统的方法"/>
+  <meta property="og:title" content="将string中保存的字符以ASCII码的形式打印"/>
   <meta property="og:site_name" content="Xuzhenqi&#39;s blog"/>
 
   
@@ -90,7 +90,7 @@
 
 	
 		<div class="page-header">		
-			<h1> ubuntu和windows双系统的方法</h1>
+			<h1> 将string中保存的字符以ASCII码的形式打印</h1>
 		</div>		
 	
 
@@ -107,34 +107,13 @@
 	<div class="mypage">		
 	  		
 
-	  <ol>
-<li>首先要有一块空闲的空间去安装ubuntu，windows下的磁盘处理程序已经很好用了，直接在需要分出来的分区上右键压缩盘即可，（可能存在失败的情况）</li>
-<li>插入Ubuntu live CD。依据提示一步一步来，注意禁用网络更新以节约时间。这里选择的是手工安装。<br>由于我的需求是使用个人桌面系统，这里给出分区表<ul>
-<li>/    逻辑分区    5G</li>
-<li>/boot    主分区    200M</li>
-<li>/home    扩展分区 40G</li>
-<li>/swap    2G ，也可以不用分</li>
-<li>/usr 12G</li>
-</ul>
-</li>
-</ol>
-<blockquote>
-<p>小技巧：对于惯用主要使用windows的用户，可以把引导项建立在/ 分区，在安装成功后进入windows使用easyBCD修复引导项。这样的话开机首先进入的是windows的引导项。</p>
-</blockquote>
-<a id="more"></a>
-<ol>
-<li>然后是漫长的等待，目测得0.5h到2h不等</li>
-<li>安装完ubuntu后需要做的事：<ol>
-<li>更新软件源及更新软件<br>首先备份软件源</li>
-</ol>
-</li>
-</ol>
-<figure class="highlight bash"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp /etc/apt/source.list /etc/apt/source.list.back</span><br></pre></td></tr></table></figure>
-<p>　　然后在source.list里加入软件源。软件源列表可以在网上找到。注意改正版本号。<br><figure class="highlight bash"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gedit  /etc/apt/source.list</span><br></pre></td></tr></table></figure><br>　　配置软件源：可以打开软件中心，在编辑/软件源对话框里进行<br>    更新软件源</p>
-<figure class="highlight bash"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get update</span><br></pre></td></tr></table></figure>
-<pre><code>更新软件
-</code></pre><p>　　　　　　打开更新管理器，进行更新</p>
-<p>　　2.    要使用3D桌面的可以激活显卡专用驱动，注意不要使用博通的专用网卡驱动，很不好用<br>　　3. 安装相关软件<br>       视频播放器    ssmplayer<br>　　　 虚拟机    virtualbox<br>　　　 浏览器    chrome    感觉比firefox好用<br>　　　 webqq/人人/qq空间/印象笔记    使用chrome产生应用程序链接<br>　　　 Adobe Flash Player plugins<br>　　4.    语言选项与输入法</p>
+	  <p>今天因为要验证opencv读取图片与matplotlib中读取图片通道的对应关系，opencv读取时是BGR而matplotlib中读取的是RGB。需要把图像的像素值依次打印输出。由于caffe中使用Blob来保存图像数据，Blob中实际使用一个std::string来保存以节约空间，所以需要把string中的字符以ASCII码的形式打印出来（当然也可以是float数组）。结果还真实折腾了一会，列举一下我犯的错误：</p>
+<h3 id="错误一：转换成int">错误一：转换成int</h3><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> &amp; img = blob.data(); </span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; img.size(); ++i) &#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="keyword">int</span>(img[i]) &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会输出负值。因为string的原型类似于vector<char>而char是有符号的。</char></p>
+<h3 id="错误二：转换成unsigned_int">错误二：转换成unsigned int</h3><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> &amp; img = blob.data(); </span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; img.size(); ++i) &#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; (<span class="keyword">unsigned</span> <span class="keyword">int</span>)(img[i]) &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会出现很大的值，因为unsigned int比char的字节数要多，所以相当于对负数加了一个最大的unsigned int值。<br><a id="more"></a></p>
+<h3 id="正确的做法：转换成unsigned_char">正确的做法：转换成unsigned char</h3><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> &amp; img = blob.data(); </span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; img.size(); ++i) &#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; reterpret_cast&lt;<span class="keyword">unsigned</span> <span class="keyword">char</span>&gt;(img[i]) &lt;&lt; endl; <span class="comment">// compiler error</span></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; (<span class="keyword">unsigned</span> <span class="keyword">char</span>)(img[i]) &lt;&lt; endl; <span class="comment">// correct</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看来数据转换在C++中还是要重视，应该尽可能使用准确的数据类型，而不是总使用int。</p>
 	  
 	</div>
 
@@ -143,14 +122,14 @@
 	<div class="pagination">
 <ul class="pagination">
 	 
-				
-    	<li class="prev"><a href="/2015/10/28/将string中保存的字符以ASCII码的形式打印/" class="alignleft prev"><i class="fa fa-arrow-circle-o-left"></i>Prev</a></li>
-  		
+		
+          <li class="prev disabled"><a><i class="fa fa-arrow-circle-o-left"></i>Prev</a></li>
+        
 
         <li><a href="/archives"><i class="fa fa-archive"></i>Archive</a></li>
 
 		
-		   <li class="next"><a href="/2015/10/27/ccnx安装与配置/" class="alignright next">Next<i class="fa fa-arrow-circle-o-right"></i></a></li>         
+		   <li class="next"><a href="/2015/10/27/ubuntu和windows双系统的方法/" class="alignright next">Next<i class="fa fa-arrow-circle-o-right"></i></a></li>         
         
 	
 </ul>
@@ -206,7 +185,7 @@
 	
 	<div class="meta-widget">
 	<i class="fa fa-clock-o"></i>
-	Oct 27 2015 
+	Oct 28 2015 
 	</div>
 	
 
@@ -217,7 +196,7 @@
     <ul id="categorys" class="tag_box list-unstyled collapse in">
           
   <li>
-    <li><a href="/categories/tools/">tools<span>3</span></a></li>
+    <li><a href="/categories/C/">C++<span>2</span></a></li>
   </li>
 
     </ul>
@@ -230,7 +209,7 @@
 	<a data-toggle="collapse" data-target="#tags"><i class="fa fa-tags"></i></a>		  
     <ul id="tags" class="tag_box list-unstyled collapse in">	  
 	    
-  <li><a href="/tags/ubuntu/">ubuntu<span>1</span></a></li> <li><a href="/tags/windows/">windows<span>1</span></a></li>
+  <li><a href="/tags/ASCII/">ASCII<span>1</span></a></li> <li><a href="/tags/string/">string<span>1</span></a></li> <li><a href="/tags/类型转换/">类型转换<span>1</span></a></li>
     </ul>
 	</div>
 		
