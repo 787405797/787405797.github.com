@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>将string中保存的字符以ASCII码的形式打印 | Xuzhenqi&#39;s blog</title>
+  <title>volatile关键字 | Xuzhenqi&#39;s blog</title>
   <meta name="author" content="Xu Zhenqi">
   
   <meta name="description" content="Technology changes life.">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="将string中保存的字符以ASCII码的形式打印"/>
+  <meta property="og:title" content="volatile关键字"/>
   <meta property="og:site_name" content="Xuzhenqi&#39;s blog"/>
 
   
@@ -90,7 +90,7 @@
 
 	
 		<div class="page-header">		
-			<h1> 将string中保存的字符以ASCII码的形式打印</h1>
+			<h1> volatile关键字</h1>
 		</div>		
 	
 
@@ -107,13 +107,13 @@
 	<div class="mypage">		
 	  		
 
-	  <p>今天因为要验证opencv读取图片与matplotlib中读取图片通道的对应关系，opencv读取时是BGR而matplotlib中读取的是RGB。需要把图像的像素值依次打印输出。由于caffe中使用Blob来保存图像数据，Blob中实际使用一个std::string来保存以节约空间，所以需要把string中的字符以ASCII码的形式打印出来（当然也可以是float数组）。结果还真实折腾了一会，列举一下我犯的错误：</p>
-<h3 id="错误一：转换成int">错误一：转换成int</h3><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> &amp; img = blob.data(); </span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; img.size(); ++i) &#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="keyword">int</span>(img[i]) &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>会输出负值。因为string的原型类似于vector<char>而char是有符号的。</char></p>
-<h3 id="错误二：转换成unsigned_int">错误二：转换成unsigned int</h3><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> &amp; img = blob.data(); </span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; img.size(); ++i) &#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; (<span class="keyword">unsigned</span> <span class="keyword">int</span>)(img[i]) &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>会出现很大的值，因为unsigned int比char的字节数要多，所以相当于对负数加了一个最大的unsigned int值。<br><a id="more"></a></p>
-<h3 id="正确的做法：转换成unsigned_char">正确的做法：转换成unsigned char</h3><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> &amp; img = blob.data(); </span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; img.size(); ++i) &#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; reterpret_cast&lt;<span class="keyword">unsigned</span> <span class="keyword">char</span>&gt;(img[i]) &lt;&lt; endl; <span class="comment">// compiler error</span></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; (<span class="keyword">unsigned</span> <span class="keyword">char</span>)(img[i]) &lt;&lt; endl; <span class="comment">// correct</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>看来数据转换在C++中还是要重视，应该尽可能使用准确的数据类型，而不是总使用int。</p>
+	  <p>今天在帮学姐做笔试题的时候，遇到了一个关于volatile关键字，因为平时比较少用，所以感觉非常陌生，现在来小小的总结一下。</p>
+<p>volatile关键字和const是相对应的。const告诉编译期，其修饰的变量<em>不可改变</em>,而volatile则<em>告诉编译器不要去优化其修饰变量的读写</em>。如果没有volatile关键字，编译器可能从CPU的寄存器中读取变量，而不是内存中，以提高读取速度。对于某些应用：</p>
+<ul>
+<li>硬件相关</li>
+<li>多线程读写</li>
+</ul>
+<p>这样可能会导致意想不到的错误。<br><a id="more"></a><br>volatile关键字可以构成重载，这个是与const一样的。看一个与类成员变量重载的例子：<br><figure class="highlight cpp"><figcaption><span>[]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> A &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">display</span><span class="params">()</span> </span>&#123;<span class="built_in">cout</span> &lt;&lt; <span class="string">"A"</span> &lt;&lt; endl;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">display</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123;<span class="built_in">cout</span> &lt;&lt; <span class="string">"A const"</span> &lt;&lt; endl;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">display</span><span class="params">()</span> <span class="keyword">volatile</span> </span>&#123;<span class="built_in">cout</span> &lt;&lt; <span class="string">"A volatile"</span> &lt;&lt; endl;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    A a; a.display(); <span class="comment">// A</span></span><br><span class="line">    <span class="keyword">const</span> A ca; ca.display();<span class="comment">// A const</span></span><br><span class="line">    <span class="keyword">volatile</span> A va; va.display(); <span class="comment">// A volatile</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>这里可以看出我们可以声明一个volatile修饰的对象，这个对象只能调用被volatile修饰的成员函数。</p>
 	  
 	</div>
 
@@ -122,14 +122,14 @@
 	<div class="pagination">
 <ul class="pagination">
 	 
-				
-    	<li class="prev"><a href="/2015/10/28/volatile关键字/" class="alignleft prev"><i class="fa fa-arrow-circle-o-left"></i>Prev</a></li>
-  		
+		
+          <li class="prev disabled"><a><i class="fa fa-arrow-circle-o-left"></i>Prev</a></li>
+        
 
         <li><a href="/archives"><i class="fa fa-archive"></i>Archive</a></li>
 
 		
-		   <li class="next"><a href="/2015/10/27/ubuntu和windows双系统的方法/" class="alignright next">Next<i class="fa fa-arrow-circle-o-right"></i></a></li>         
+		   <li class="next"><a href="/2015/10/28/将string中保存的字符以ASCII码的形式打印/" class="alignright next">Next<i class="fa fa-arrow-circle-o-right"></i></a></li>         
         
 	
 </ul>
@@ -209,7 +209,7 @@
 	<a data-toggle="collapse" data-target="#tags"><i class="fa fa-tags"></i></a>		  
     <ul id="tags" class="tag_box list-unstyled collapse in">	  
 	    
-  <li><a href="/tags/ASCII/">ASCII<span>1</span></a></li> <li><a href="/tags/string/">string<span>1</span></a></li> <li><a href="/tags/类型转换/">类型转换<span>1</span></a></li>
+  <li><a href="/tags/volatile/">volatile<span>1</span></a></li>
     </ul>
 	</div>
 		
